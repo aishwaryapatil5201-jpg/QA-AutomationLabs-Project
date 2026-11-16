@@ -8,6 +8,11 @@ if (fs.existsSync(envFile) && typeof process.loadEnvFile === 'function') {
   process.loadEnvFile(envFile);
 }
 
+/* Public REST playground used by the API suite; override via API_BASE_URL. */
+const API_BASE_URL = (
+  process.env.API_BASE_URL ?? 'https://api.qaautomationlabs.com/v1/'
+);
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -36,15 +41,26 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    /* API-only suite: no browser, no setup dependency, its own baseURL. */
+    {
+      name: 'api',
+      testDir: './tests/api',
+      use: {
+        baseURL: API_BASE_URL,
+        extraHTTPHeaders: { Accept: 'application/json' },
+      },
+    },
+
     /* Logs in once and saves the session for every browser project below. */
     {
       name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      testMatch: '**/setup/auth.setup.ts',
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'chromium',
+      testIgnore: /api\//,
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
@@ -54,6 +70,7 @@ export default defineConfig({
 
     {
       name: 'firefox',
+      testIgnore: /api\//,
       use: {
         ...devices['Desktop Firefox'],
         storageState: 'playwright/.auth/user.json',
@@ -63,6 +80,7 @@ export default defineConfig({
 
     {
       name: 'webkit',
+      testIgnore: /api\//,
       use: {
         ...devices['Desktop Safari'],
         storageState: 'playwright/.auth/user.json',

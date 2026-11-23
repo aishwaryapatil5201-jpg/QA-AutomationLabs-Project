@@ -8,6 +8,12 @@ if (fs.existsSync(envFile) && typeof process.loadEnvFile === 'function') {
   process.loadEnvFile(envFile);
 }
 
+/* Use installed Chrome on local Windows, where application control may block
+   Playwright's downloaded Chromium. CI and other platforms keep the bundled browser. */
+const localChrome = process.platform === 'win32' && !process.env.CI
+  ? { channel: 'chrome' }
+  : {};
+
 /* Public REST playground used by the API suite; override via API_BASE_URL. */
 const API_BASE_URL = (
   process.env.API_BASE_URL ?? 'https://api.qaautomationlabs.com/v1/'
@@ -55,7 +61,7 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: '**/setup/auth.setup.ts',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], ...localChrome },
     },
 
     {
@@ -63,6 +69,7 @@ export default defineConfig({
       testIgnore: /api\//,
       use: {
         ...devices['Desktop Chrome'],
+        ...localChrome,
         storageState: 'playwright/.auth/user.json',
       },
       dependencies: ['setup'],
